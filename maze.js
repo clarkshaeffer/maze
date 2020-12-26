@@ -24,7 +24,6 @@ class Maze extends Phaser.Scene {
 
     create() {
 
-        let a = 4;
         let i, j;
         let maze = []; // empty 1d array
         let rooms = []; // maze is for sprites, rooms is for objects
@@ -37,6 +36,8 @@ class Maze extends Phaser.Scene {
                 // maze is for sprites, rooms is for objects
                 maze[i][j] = this.add.sprite(j * 32 + 16, i * 32 + 16, 'room'); // frame size is 32x32, offset half for center.
                 rooms[i][j] = new Room(false, false, false, false, false, i, j);
+                rooms[i][j].visisted = false;
+                // console.log(i + ', ' + j + ': ' + rooms[i][j].visisted);
             } // end for each col
         } // end for each row
 
@@ -49,6 +50,8 @@ class Maze extends Phaser.Scene {
             //     }
             // }
 
+            // console.log('right visited: (' + row + ', ' + col + '): ' + rooms[row][col + 1].visisted);
+            // console.log('left visited: (' + row + ', ' + col + '): ' + rooms[row][col - 1].visisted);
             toVisit = [false, false, false, false]; // top, right, bottom, left
             if (row > 0) { // check top
                 // console.log('visited above: ' + rooms[row - 1][col].visisted);
@@ -57,8 +60,11 @@ class Maze extends Phaser.Scene {
                 }
             }
             if (col + 1 < COLS) { // check right
-                // console.log('visited to the right: ' + rooms[row][col + 1].visited);
-                if (!(rooms[row][col + 1].visited)) {
+                // console.log('1: visited to the right: ' + rooms[row][col + 1].visited);
+                let right_visited = rooms[row][col + 1].visisted;
+                // console.log('2: right visited: ' + right_visited);
+                if (right_visited == false) {
+                    // console.log('3: right visited: ' + right_visited);
                     toVisit[1] = true;
                 }
             }
@@ -69,8 +75,11 @@ class Maze extends Phaser.Scene {
                 }
             }
             if (col > 0) { // check left
-                // console.log('visited to the left: ' + rooms[row][col - 1].visited);
-                if (!(rooms[row][col - 1].visited)) {
+                // console.log('1: visited to the left: ' + rooms[row][col - 1].visited);
+                let left_visited = rooms[row][col - 1].visisted;
+                // console.log('2: left visited: ' + left_visited);
+                if (left_visited == false) {
+                    // console.log('3: left visited: ' + left_visited);
                     toVisit[3] = true;
                 }
             }
@@ -150,15 +159,28 @@ class Maze extends Phaser.Scene {
 
 
         function FindNeighbor(row, col) {
-            let unvisitedNeighbors = UnvisitedNeighbors(row, col); // get unvisited neighbors
             let neighbor = 0;
             let neighborFound = false;
-            while (unvisitedNeighbors.includes(true)) { // while there are unvisited neighbors
+            let unvisitedNeighbors = UnvisitedNeighbors(row, col); // get unvisited neighbors
+            let exists_unvisited = unvisitedNeighbors.includes(true);
+
+            /* Debugging: */
+            console.log('unvisited neighbors of (' + row + ', ' + col + '): ' + unvisitedNeighbors);
+            if (exists_unvisited) {
+                console.log("There exists unvisited");
+            }
+            if (exists_unvisited == false) {
+                console.log("There does not exist unvisited");
+            }
+            /* End debugging */
+
+            // WHAT! WHY DOES THIS ENTER THE LOOP WHEN FALSE AT A DEAD END ??
+            while (exists_unvisited) { // while there are unvisited neighbors
+                console.log('exists unvisited');
                 while (!neighborFound) {
-                    neighbor = Math.floor(Math.random() * unvisitedNeighbors.length);
+                    neighbor = Math.floor(Math.random() * unvisitedNeighbors.length); // random in toVisit
                     if (unvisitedNeighbors[neighbor] == true) {
                         neighborFound = true;
-                        // unvisitedNeighbors[neighbor] = false;
                     }
                 }
                 if (neighbor == 0) { // top
@@ -219,12 +241,6 @@ class Maze extends Phaser.Scene {
 
         rooms[row][col].visisted = true; // set as visited
         console.log('start: (' + row + ', ' + col + ')');
-        console.log(a);
-        function func() {
-            a = 7;
-        }
-        func();
-        console.log(a);
 
         FindNeighbor(row, col);
 
