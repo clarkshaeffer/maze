@@ -1,27 +1,34 @@
 const ROWS = 15; // maze width
 const COLS = 10; // maze height
 // 18x24 is too big for maximum call stack size
+
+// object for each 32x32 square; sprite frame reacts to wall states, default false for closed.
 function Room(row, col) {
+    this.row = row;
+    this.col = col;
     this.visited = false;
     this.topOpen = false;
     this.rightOpen = false;
     this.bottomOpen = false;
     this.leftOpen = false;
-    this.row = row;
-    this.col = col;
-}
+} // end Room constructor
 
 
-let i, j;
 let maze = []; // empty 1d array
 let rooms = []; // maze is for sprites, rooms is for objects
 // let toVisit = [false, false, false, false]; // top, right, bottom, left
 
 
-
+/**
+ * 
+ * @param {*} row current room's row
+ * @param {*} col current room's column
+ * @returns toVisit: boolean array of visitable directions: 
+ * top, right, bottom, and left respectively.
+ * @example [false, true, true, false]: available to visit right or bottom.
+ */
 function UnvisitedNeighbors(row, col) {
-    // let toVisit = [false, false, false, false]; // top, right, bottom, left
-    let toVisit = [];
+    let toVisit = []; // top, right, bottom, left
     toVisit.push(rooms[row][col].topOpen);
     toVisit.push(rooms[row][col].rightOpen);
     toVisit.push(rooms[row][col].bottomOpen);
@@ -50,11 +57,20 @@ function UnvisitedNeighbors(row, col) {
         }
     }
     // console.log('(' + row + ', ' + col + '): ' + toVisit);
-    // rooms;
     return toVisit;
 } // end UnvisitedNeighbors
 
 
+/**
+ * 
+ * from given Room object's walls-open booleans, 
+ * generates the needed sprite frame from room spritesheet.
+ * Spritesheet: room-Sheet.png in assets 
+ * @param {*} sprite maze sprites array index, representing room sprite
+ * @param {*} room Room object array index
+ * @yields refreshed room sprite frame 
+ * @example // Room: topOpen, !rightOpen, !bottomOpen, !leftOpen : sprite frame 1 with only top open
+ */
 function SetRoomFrame(sprite, room) {
     /* frames:
     0: unvisited
@@ -124,17 +140,22 @@ function SetRoomFrame(sprite, room) {
 } // end SetRoomFrame
 
 
+/**
+ * Retrieving UnvisitedNeighbors of current location, while there is an unvisited location,
+ * will move accordingly, set visited status update sprite with SetRoomFrame(),
+ * and recursively call itself.
+ * @param {*} row current room's row
+ * @param {*} col current room's column
+ * @yields SetRoomFrame() for each location, and moves current location. Recursive call.
+ * 
+ */
 function FindNeighbor(row, col) {
     let neighbor = 0;
     let neighborFound = false;
     let unvisitedNeighbors = UnvisitedNeighbors(row, col); // get unvisited neighbors
     let exists_unvisited = unvisitedNeighbors.includes(true);
 
-    // WHAT! WHY DOES THIS ENTER THE LOOP WHEN FALSE AT A DEAD END ??
-    if (!exists_unvisited) {
-        console.log('recursing');
-    }
-    while (exists_unvisited) {
+    while (exists_unvisited) { // while there are unvisited neighbors
         while (!neighborFound) {
             neighbor = Math.floor(Math.random() * unvisitedNeighbors.length); // random in toVisit
             if (unvisitedNeighbors[neighbor] == true) {
@@ -142,11 +163,11 @@ function FindNeighbor(row, col) {
             }
         }
         if (neighbor == 0) { // top
-            rooms[row][col].topOpen = true;
-            SetRoomFrame(maze[row][col], rooms[row][col]);
-            row--;
+            rooms[row][col].topOpen = true; // open top wall
+            SetRoomFrame(maze[row][col], rooms[row][col]); // refresh sprite
+            row--; // go up
             rooms[row][col].visited = true;
-            rooms[row][col].bottomOpen = true;
+            rooms[row][col].bottomOpen = true; // open bottom
         }
         else if (neighbor == 1) { // right
             rooms[row][col].rightOpen = true;
@@ -169,8 +190,9 @@ function FindNeighbor(row, col) {
             rooms[row][col].visited = true;
             rooms[row][col].rightOpen = true;
         }
-        SetRoomFrame(maze[row][col], rooms[row][col]);
-        FindNeighbor(row, col);
+        // SetRoomFrame(maze[row][col], rooms[row][col]); // refresh sprite for new room
+        // if (UnvisitedNeighbors(row, col).includes(true)) {
+        FindNeighbor(row, col); //
     } // end while neighbor
 } // end FindNeighbor
 
@@ -186,15 +208,18 @@ class Maze extends Phaser.Scene {
             frameWidth: 32,
             frameHeight: 32
         });
+        this.load.image('player', 'assets/maze-player.png');
     }
 
     create() {
+        /* Make maze: */
+        let i, j;
         for (i = 0; i < ROWS; i++) { // for each row
+            // maze is for sprites, rooms is for objects
             maze[i] = []; // new 1d array for each element, making a 2d array
             rooms[i] = [];
             for (j = 0; j < COLS; j++) { // for each col
                 // j first, then i; phaser moves right->down for coordinates, but I want down->right.
-                // maze is for sprites, rooms is for objects
                 maze[i][j] = this.add.sprite(j * 32 + 16, i * 32 + 16, 'room'); // frame size is 32x32, offset half for center.
                 rooms[i][j] = new Room(i, j);
             } // end for each col
@@ -211,14 +236,16 @@ class Maze extends Phaser.Scene {
 
         FindNeighbor(row, col);
 
+        /* end make maze */
 
 
+        // this point, until now, is never reached. Maximum stack size always breaks.
+        this.add.image('player', 16, 16);
 
     } // end create()
 
     update() {
     } // end update()
-
 }
 
 const config = {
@@ -231,9 +258,3 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-
-
-
-
-
-// visisted !!!!!!!!!!
